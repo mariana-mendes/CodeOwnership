@@ -1,8 +1,6 @@
 package app;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 
@@ -11,14 +9,14 @@ import artifact.Artifact;
 import codeOwnership.CodeOwnership;
 import exception.StudentNotFoundException;
 import expertise.Expertise;
-import git.GitRepository;
+import javaparsermodule.Extractor;
 import pair.PairStudentArtifact;
 import student.Student;
 import student.StudentExpertise;
 
 import org.eclipse.jgit.api.errors.GitAPIException;
 
-import com.github.javaparser.utils.Pair;
+import com.github.javaparser.ParseException;
 
 import util.Util;
 
@@ -30,17 +28,19 @@ public class App {
 	private static Scanner in = new Scanner(System.in);
 
 	public static void main(String[] args) throws Exception {
-		String repoPath = inputRepositoryPath();
-		AnalysisType analysisType = chooseAnalysisType();
-		co = new CodeOwnership(analysisType, repoPath);
-		printAllStudentsNames();
-		
-		System.out.println(generateExpertiseData(co));
-		
-		generateTSV();
-		displayStudentInformation();
-		
-		in.close();
+//		String repoPath = inputRepositoryPath();
+//		AnalysisType analysisType = chooseAnalysisType();
+//		co = new CodeOwnership(analysisType, repoPath);
+//		printAllStudentsNames();
+//		
+//		System.out.println(generateExpertiseData(co));
+//		
+//		generateTSV();
+//		displayStudentInformation();
+//		
+//		
+//		in.close();
+		useParser();
 	}
 
 	private static void printPairs(CodeOwnership co2) {
@@ -162,6 +162,11 @@ public class App {
 			counterOfExpertises[6] += ownershipPercentege;
 		if (artifact.getExpertise().contains(Expertise.ABSTRACT_CLASSES))
 			counterOfExpertises[7] += ownershipPercentege;
+	}
+	
+	private static void useParser() throws ParseException, IOException {
+		Extractor ext = new Extractor();
+		ext.printClasses();
 	}
 
 }
