@@ -1,6 +1,7 @@
 package app;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Scanner;
 
@@ -164,8 +165,9 @@ public class App {
 			counterOfExpertises[7] += ownershipPercentege;
 	}
 	
-	private static void useParser() throws ParseException, IOException {
+	private static void useParser() throws ParseException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		Extractor ext = new Extractor();
+		System.out.println("a");
 		ext.printClasses();
 	}
 

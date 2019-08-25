@@ -1,14 +1,18 @@
 package javaparsermodule;
 
-
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.NodeList;
@@ -27,13 +31,25 @@ public class Extractor {
 	private Map<String, String> extendedType;
 	private Map<String, List<String>> methodsFromClass;
 
+	private List<Function<ClassOrInterfaceDeclaration, Boolean>> score;
+
 	public Extractor() {
 		this.componentClass = new ComponentClass<>();
 		this.extendedType = new HashMap<>();
 		this.methodsFromClass = new HashMap<>();
+		this.configScore();
 	}
 
-	public void getMethodsFromProject() throws ParseException, IOException {
+	private void configScore() {
+		Operations op = new Operations();
+		this.score = new ArrayList<Function<ClassOrInterfaceDeclaration, Boolean>>();
+		this.score.add(op.hasFacade);
+		this.score.add(op.hasController);
+		this.score.add(op.useInheritance);
+	}
+
+	public void getMethodsFromProject() throws ParseException, IOException, IllegalAccessException,
+			IllegalArgumentException, InvocationTargetException {
 		this.linkClassToMethods();
 		this.linkExtendTypes();
 		this.printCommonMethods();
@@ -85,26 +101,50 @@ public class Extractor {
 						}
 					}
 				}
-				System.out.println("Proporção métodos herdados/total de métodos da classe: " + inheritance + "/" + total);
+				System.out
+						.println("Proporção métodos herdados/total de métodos da classe: " + inheritance + "/" + total);
 			}
 		}
 	}
-	
-	
-	public void printClasses() throws ParseException, IOException {
-		this.componentClass.getAllMethods(new File("/home/mariana/Documents/tcc/LAB5/src"));
-		Set<ClassOrInterfaceDeclaration> classes = this.componentClass.getClasses();
-		 FileWriter fw=new FileWriter("./requiredclasses.txt");    
-		for (ClassOrInterfaceDeclaration c : classes) {
-			String classe = c.getNameAsString();
-			
-			if(!classe.contains("Test") && (classe.contains(CONTROLLER) || classe.contains(APOSTA) || classe.contains(SEGURO) || classe.contains(FACADE))) {
-		           fw.write(classe);    
-		           fw.write(LS);
-		           
+
+	public void printClasses() throws ParseException, IOException, IllegalAccessException, IllegalArgumentException,
+			InvocationTargetException {
+
+		int count = 1;
+		this.componentClass = new ComponentClass<Object>();
+		File file;
+		while (count < 5) {
+			file = new File("/home/mariana/Documents/tcc/labs/lab" + count);
+			this.componentClass.getAllMethods(file);
+
+			Set<ClassOrInterfaceDeclaration> classes = this.componentClass.getClasses();
+
+			FileWriter fw = new FileWriter("../results/required" + count + ".txt");
+
+			for (int i = 0; i < this.score.size(); i++) {
+				String a = "";
+				if (i == 0) {
+					a = "hasFacade";
+				} else if (i == 1) {
+					a = "hasController";
+				} else {
+					a = "useInheritance";
+				}
+
+				for (ClassOrInterfaceDeclaration c : classes) {
+					if ((this.score.get(i).apply(c))) {
+						System.out.println("hi");
+						fw.write(a + ": true" + " (" + c.getNameAsString() + ") " + LS);
+						
+						break;
+					}
+				}
+				
+
 			}
-	      
+			fw.close();
+			count++;
+
 		}
-		 fw.close(); 
 	}
 }

@@ -1,9 +1,0 @@
-Aposta
-SistemaApostasController
-SistemaApostasCliente
-TipoSeguro
-ApostaAssegurada
-Facade
-ApostaAsseguradaPorValor
-ApostaAsseguradaPorTaxa
-ApostasComparador
