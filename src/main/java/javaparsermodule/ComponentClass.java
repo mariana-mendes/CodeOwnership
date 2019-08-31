@@ -44,7 +44,7 @@ public class ComponentClass<Object> extends VoidVisitorAdapter<Object>{
 		this.classes = classes;
 	}
 
-	public void getAllMethods(File projectDir) throws ParseException, IOException {
+	public void register(File projectDir) throws ParseException, IOException {
 	        new DirExplorer((level, path, file) -> path.endsWith(".java"), (level, path, file) -> {
 	        	Object a = (Object) path;
 	            try {

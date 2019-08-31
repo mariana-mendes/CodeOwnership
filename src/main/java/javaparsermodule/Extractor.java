@@ -1,12 +1,9 @@
 package javaparsermodule;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,29 +20,30 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 public class Extractor {
 
 	public static final String LS = System.lineSeparator();
-	public static final String APOSTA = "Aposta";
-	public static final String SEGURO = "Seguro";
-	public static final String FACADE = "Facade";
-	public static final String CONTROLLER = "Controller";
 	private ComponentClass<Object> componentClass;
 	private Map<String, String> extendedType;
 	private Map<String, List<String>> methodsFromClass;
+	private Repository repo;
 
-	private List<Function<ClassOrInterfaceDeclaration, Boolean>> score;
+	private Map<String, Function<ClassOrInterfaceDeclaration, Boolean>> score;
 
-	public Extractor() {
+	public Extractor() throws ParseException, IOException {
 		this.componentClass = new ComponentClass<>();
 		this.extendedType = new HashMap<>();
 		this.methodsFromClass = new HashMap<>();
+		this.repo = new Repository();
+		this.persistLabs();
 		this.configScore();
 	}
 
 	private void configScore() {
 		Operations op = new Operations();
-		this.score = new ArrayList<Function<ClassOrInterfaceDeclaration, Boolean>>();
-		this.score.add(op.hasFacade);
-		this.score.add(op.hasController);
-		this.score.add(op.useInheritance);
+		this.score = new HashMap<String, Function<ClassOrInterfaceDeclaration, Boolean>>();
+		this.score.put("hasFacade", op.hasFacade);
+		this.score.put("hasController", op.hasController);
+		this.score.put("useInheritance", op.useInheritance);
+		this.score.put("useInterface", op.useInterface);
+		this.score.put("useAbstractClass", op.useAbstractClass);
 	}
 
 	public void getMethodsFromProject() throws ParseException, IOException, IllegalAccessException,
@@ -53,7 +51,7 @@ public class Extractor {
 		this.linkClassToMethods();
 		this.linkExtendTypes();
 		this.printCommonMethods();
-		this.printClasses();
+		this.checkRequeridStatements();
 
 	}
 
@@ -107,43 +105,43 @@ public class Extractor {
 		}
 	}
 
-	public void printClasses() throws ParseException, IOException, IllegalAccessException, IllegalArgumentException,
-			InvocationTargetException {
-
+	public void persistLabs() throws ParseException, IOException {
 		int count = 1;
-		this.componentClass = new ComponentClass<Object>();
 		File file;
-		while (count < 5) {
-			file = new File("/home/mariana/Documents/tcc/labs/lab" + count);
-			this.componentClass.getAllMethods(file);
+		while (count <= 10) {
+			this.componentClass = new ComponentClass<Object>();
+			file = new File("/home/mariana/Documents/tcc/labs-otimizado/" + count);
+			this.componentClass.register(file);
+			this.repo.addNewLab(count, this.componentClass);
+			count++;
+		}
+	}
 
-			Set<ClassOrInterfaceDeclaration> classes = this.componentClass.getClasses();
+	public void checkRequeridStatements() throws ParseException, IOException, IllegalAccessException,
+			IllegalArgumentException, InvocationTargetException {
 
-			FileWriter fw = new FileWriter("../results/required" + count + ".txt");
+		Set<Integer> labs = this.repo.getCurrentLabs().keySet();
+		System.out.println(labs);
+		for (Integer lab : labs) {
+			Set<ClassOrInterfaceDeclaration> classes = this.repo.getCurrentLabs().get(lab).getClasses();
 
-			for (int i = 0; i < this.score.size(); i++) {
-				String a = "";
-				if (i == 0) {
-					a = "hasFacade";
-				} else if (i == 1) {
-					a = "hasController";
-				} else {
-					a = "useInheritance";
-				}
+			FileWriter fw = new FileWriter("../results/required" + lab + ".txt");
+			Set<String> keys = this.score.keySet();
 
+			for (String key : keys) {
+				boolean ans = false;
 				for (ClassOrInterfaceDeclaration c : classes) {
-					if ((this.score.get(i).apply(c))) {
-						System.out.println("hi");
-						fw.write(a + ": true" + " (" + c.getNameAsString() + ") " + LS);
-						
+					ans = this.score.get(key).apply(c);
+					if (ans) {
+						fw.write(key + ": true" + " (" + c.getNameAsString() + ") " + LS);
 						break;
 					}
 				}
-				
-
+				if (!ans) {
+					fw.write(key + ": false" + LS);
+				}
 			}
 			fw.close();
-			count++;
 
 		}
 	}

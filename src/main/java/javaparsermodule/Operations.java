@@ -41,5 +41,14 @@ public class Operations {
 	 Function<ClassOrInterfaceDeclaration, Boolean> useInheritance = classe -> {
 			return (classe.getExtendedTypes() != null);
 	};
+	
+	 Function<ClassOrInterfaceDeclaration, Boolean> useAbstractClass = classe -> {
+			return (classe.isAbstract());
+	};
+	
+	
+	 Function<ClassOrInterfaceDeclaration, Boolean> useInterface = classe -> {
+			return (classe.isInterface());
+	};
 
 }
