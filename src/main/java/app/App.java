@@ -11,6 +11,7 @@ import codeOwnership.CodeOwnership;
 import exception.StudentNotFoundException;
 import expertise.Expertise;
 import javaparsermodule.Extractor;
+import javaparsermodule.Feedback;
 import pair.PairStudentArtifact;
 import student.Student;
 import student.StudentExpertise;
@@ -28,10 +29,14 @@ public class App {
 	private static CodeOwnership co;
 	private static Scanner in = new Scanner(System.in);
 	private static Extractor ext;
-
+	private static Feedback fd;
+	
 	public static void main(String[] args) throws Exception {
 		ext = new Extractor();
+		fd = new Feedback();
 		useParser();
+		fd.findLabResult();
+		
 	}
 
 	

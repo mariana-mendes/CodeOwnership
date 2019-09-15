@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,12 +15,15 @@ import java.util.function.Function;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
 public class Extractor {
 
 	public static final String LS = System.lineSeparator();
+	public static final ArrayList<String> collections = new ArrayList<String>(
+			Arrays.asList("ArrayList", "List", "Set", "HashSet", "Map", "HashMap"));
 	private ComponentClass<Object> componentClass;
 	private Map<String, String> extendedType;
 	private Map<String, List<String>> methodsFromClass;
@@ -44,6 +48,7 @@ public class Extractor {
 		this.score.put("useInheritance", op.useInheritance);
 		this.score.put("useInterface", op.useInterface);
 		this.score.put("useAbstractClass", op.useAbstractClass);
+		this.score.put("useException", op.useException);
 	}
 
 	public void getMethodsFromProject() throws ParseException, IOException, IllegalAccessException,
@@ -121,28 +126,107 @@ public class Extractor {
 			IllegalArgumentException, InvocationTargetException {
 
 		Set<Integer> labs = this.repo.getCurrentLabs().keySet();
-		System.out.println(labs);
 		for (Integer lab : labs) {
 			Set<ClassOrInterfaceDeclaration> classes = this.repo.getCurrentLabs().get(lab).getClasses();
-
+			System.out.println("lab " + lab);
 			FileWriter fw = new FileWriter("../results/required" + lab + ".txt");
 			Set<String> keys = this.score.keySet();
 
 			for (String key : keys) {
+				boolean findCase = false;
 				boolean ans = false;
 				for (ClassOrInterfaceDeclaration c : classes) {
 					ans = this.score.get(key).apply(c);
-					if (ans) {
-						fw.write(key + ": true" + " (" + c.getNameAsString() + ") " + LS);
-						break;
+					if (ans && !findCase) {
+						findCase = true;
+						fw.write(LS + "* " + key + ": true" + LS);
+						fw.write("- " + c.getNameAsString() + LS);
+					} else if (ans && findCase) {
+						fw.write("- " + c.getNameAsString() + LS);
 					}
 				}
-				if (!ans) {
-					fw.write(key + ": false" + LS);
+				if (!ans && !findCase) {
+					fw.write(LS + "* " + key + ": false" + LS);
 				}
 			}
+			checkTests(this.repo.getCurrentLabs().get(lab), fw);
+			checkCollections(this.repo.getCurrentLabs().get(lab), fw);
 			fw.close();
 
 		}
 	}
+
+	private void checkTests(ComponentClass<Object> component, FileWriter fw) throws IOException {
+		Set<String> tests = component.getTestClass();
+		fw.write(LS + "* " + "hasTests: ");
+		if (!tests.isEmpty()) {
+			fw.write("true (");
+			for (String string : tests) {
+				fw.write(string + ", ");
+			}
+			fw.write(")");
+		} else {
+			fw.write("false");
+		}
+		fw.write(LS);
+	}
+
+	private void checkCollections(ComponentClass<Object> lab, FileWriter fw) throws IOException {
+
+		List<String> sets = new ArrayList<String>();
+		List<String> maps = new ArrayList<String>();
+		List<String> arrays = new ArrayList<String>();
+		for (ClassOrInterfaceDeclaration cl : lab.getClasses()) {
+			List<FieldDeclaration> fields = cl.getFields();
+			for (FieldDeclaration fieldDeclaration : fields) {
+				if (!fieldDeclaration.getElementType().isPrimitiveType()
+						&& !fieldDeclaration.getElementType().asString().equals("String")) {
+					if (fieldDeclaration.getElementType().toString().contains("Map")) {
+						maps.add(fieldDeclaration.getElementType().toString());
+					}
+					if (fieldDeclaration.getElementType().toString().contains("Set")) {
+						sets.add(fieldDeclaration.getElementType().toString());
+					}
+					if (fieldDeclaration.getElementType().toString().contains("List")) {
+						arrays.add(fieldDeclaration.getElementType().toString());
+					}
+
+				}
+			}
+		}
+
+		fw.write(LS + "* " + "usedHashSet: ");
+		if (!sets.isEmpty()) {
+			fw.write("true " + LS);
+			for (String string : sets) {
+				fw.write("- " + string + LS);
+			}
+
+		} else {
+			fw.write("false " + LS);
+		}
+
+		fw.write(LS + "* " + "usedHashMap: ");
+		if (!maps.isEmpty()) {
+			fw.write("true " + LS);
+			for (String string : maps) {
+				fw.write("- " + string + LS);
+			}
+
+		} else {
+			fw.write("false " + LS);
+		}
+
+		fw.write(LS + "* " + "usedArrayList: ");
+		if (!arrays.isEmpty()) {
+			fw.write("true " + LS);
+			for (String string : arrays) {
+				fw.write("- " + string + LS);
+			}
+
+		} else {
+			fw.write("false " + LS);
+		}
+	}
+
 }

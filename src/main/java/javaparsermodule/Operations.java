@@ -2,9 +2,11 @@ package javaparsermodule;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
 
 
 public class Operations {
@@ -13,7 +15,7 @@ public class Operations {
 			Arrays.asList("Controller", "Controlador"));
 	
 	public static final List<String> facade = new ArrayList<String>( 
-			Arrays.asList("Facade", "Fachada", "Sistema"));
+			Arrays.asList("Facade", "Fachada"));
 	
 	
 	 Function<ClassOrInterfaceDeclaration, Boolean> hasController = classe -> {
@@ -39,7 +41,7 @@ public class Operations {
 	};
 	
 	 Function<ClassOrInterfaceDeclaration, Boolean> useInheritance = classe -> {
-			return (classe.getExtendedTypes() != null);
+			return (!classe.getExtendedTypes().isEmpty());
 	};
 	
 	 Function<ClassOrInterfaceDeclaration, Boolean> useAbstractClass = classe -> {
@@ -50,5 +52,17 @@ public class Operations {
 	 Function<ClassOrInterfaceDeclaration, Boolean> useInterface = classe -> {
 			return (classe.isInterface());
 	};
-
+	
+	 Function<ClassOrInterfaceDeclaration, Boolean> useException = classe -> {
+		boolean satisfied = false;
+		List<MethodDeclaration> methods = classe.getMethods();
+		for (MethodDeclaration methodDeclaration : methods) {
+			if(!methodDeclaration.getThrownExceptions().isEmpty()) {
+				satisfied = true;
+				return satisfied;
+			}
+		}
+		return satisfied;
+	};
+	
 }
