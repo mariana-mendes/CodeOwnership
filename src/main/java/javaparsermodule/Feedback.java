@@ -8,7 +8,7 @@ import java.util.List;
 
 public class Feedback {
 
-	private static final String DIR = "/home/mariana/Documents/tcc/results/required";
+	private static final String DIR = "home/marianamendes/tcc/results/";
 	private HashMap<String, String> resultsKeys;
 	private HashMap<String, String> artifacts;
 

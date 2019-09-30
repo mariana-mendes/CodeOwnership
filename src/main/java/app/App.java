@@ -35,7 +35,7 @@ public class App {
 		ext = new Extractor();
 		fd = new Feedback();
 		useParser();
-		fd.findLabResult();
+		//fd.findLabResult();
 		
 	}
 

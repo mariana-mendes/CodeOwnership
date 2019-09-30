@@ -30,6 +30,7 @@ public class Extractor {
 	private Repository repo;
 
 	private Map<String, Function<ClassOrInterfaceDeclaration, Boolean>> score;
+	FileWriter csvWriter = new FileWriter("output.csv");
 
 	public Extractor() throws ParseException, IOException {
 		this.componentClass = new ComponentClass<>();
@@ -40,15 +41,41 @@ public class Extractor {
 		this.configScore();
 	}
 
-	private void configScore() {
+	private void configScore() throws IOException {
 		Operations op = new Operations();
 		this.score = new HashMap<String, Function<ClassOrInterfaceDeclaration, Boolean>>();
+		csvWriter.append("hasFacade");
+		csvWriter.append(",");
 		this.score.put("hasFacade", op.hasFacade);
+
+		csvWriter.append("hasController");
+		csvWriter.append(",");
 		this.score.put("hasController", op.hasController);
+
+		csvWriter.append("useInheritance");
+		csvWriter.append(",");
 		this.score.put("useInheritance", op.useInheritance);
+
+		csvWriter.append("useInterface");
+		csvWriter.append(",");
 		this.score.put("useInterface", op.useInterface);
+
+		csvWriter.append("useAbstractClass");
+		csvWriter.append(",");
 		this.score.put("useAbstractClass", op.useAbstractClass);
+
+		csvWriter.append("useException");
+		csvWriter.append(",");
 		this.score.put("useException", op.useException);
+
+		csvWriter.append("hasTests");
+		csvWriter.append(",");
+		csvWriter.append("usedHashSet");
+		csvWriter.append(",");
+		csvWriter.append("usedHashMap");
+		csvWriter.append(",");
+		csvWriter.append("usedArrayList");
+		csvWriter.append("\n");
 	}
 
 	public void getMethodsFromProject() throws ParseException, IOException, IllegalAccessException,
@@ -113,9 +140,9 @@ public class Extractor {
 	public void persistLabs() throws ParseException, IOException {
 		int count = 1;
 		File file;
-		while (count <= 10) {
+		while (count <= 23) {
 			this.componentClass = new ComponentClass<Object>();
-			file = new File("/home/mariana/Documents/tcc/labs-otimizado/" + count);
+			file = new File("/home/marianamendes/tcc/labs/src" + count);
 			this.componentClass.register(file);
 			this.repo.addNewLab(count, this.componentClass);
 			count++;
@@ -127,10 +154,12 @@ public class Extractor {
 
 		Set<Integer> labs = this.repo.getCurrentLabs().keySet();
 		for (Integer lab : labs) {
+			List<String> output = new ArrayList<String>();
 			Set<ClassOrInterfaceDeclaration> classes = this.repo.getCurrentLabs().get(lab).getClasses();
 			System.out.println("lab " + lab);
 			FileWriter fw = new FileWriter("../results/required" + lab + ".txt");
-			Set<String> keys = this.score.keySet();
+			List<String> keys = new ArrayList<String>(Arrays.asList("hasFacade",  "hasController",
+					"useInheritance", "useInterface", "useAbstractClass", "useException"));
 
 			for (String key : keys) {
 				boolean findCase = false;
@@ -139,6 +168,7 @@ public class Extractor {
 					ans = this.score.get(key).apply(c);
 					if (ans && !findCase) {
 						findCase = true;
+						output.add("true");
 						fw.write(LS + "* " + key + ": true" + LS);
 						fw.write("- " + c.getNameAsString() + LS);
 					} else if (ans && findCase) {
@@ -146,32 +176,42 @@ public class Extractor {
 					}
 				}
 				if (!ans && !findCase) {
+					output.add("false");
 					fw.write(LS + "* " + key + ": false" + LS);
 				}
 			}
-			checkTests(this.repo.getCurrentLabs().get(lab), fw);
-			checkCollections(this.repo.getCurrentLabs().get(lab), fw);
+
+			output.add(checkTests(this.repo.getCurrentLabs().get(lab), fw));
+			checkCollections(this.repo.getCurrentLabs().get(lab), fw, output);
 			fw.close();
 
+			csvWriter.append(String.join(",", output));
+			csvWriter.append("\n");
 		}
+		csvWriter.flush();
+		csvWriter.close();
 	}
 
-	private void checkTests(ComponentClass<Object> component, FileWriter fw) throws IOException {
+	private String checkTests(ComponentClass<Object> component, FileWriter fw) throws IOException {
+		String ans = "";
 		Set<String> tests = component.getTestClass();
 		fw.write(LS + "* " + "hasTests: ");
 		if (!tests.isEmpty()) {
+			ans = "true";
 			fw.write("true (");
 			for (String string : tests) {
 				fw.write(string + ", ");
 			}
 			fw.write(")");
 		} else {
+			ans = "false";
 			fw.write("false");
 		}
 		fw.write(LS);
+		return ans;
 	}
 
-	private void checkCollections(ComponentClass<Object> lab, FileWriter fw) throws IOException {
+	private void checkCollections(ComponentClass<Object> lab, FileWriter fw, List<String> output) throws IOException {
 
 		List<String> sets = new ArrayList<String>();
 		List<String> maps = new ArrayList<String>();
@@ -197,34 +237,40 @@ public class Extractor {
 
 		fw.write(LS + "* " + "usedHashSet: ");
 		if (!sets.isEmpty()) {
+			output.add("true");
 			fw.write("true " + LS);
 			for (String string : sets) {
 				fw.write("- " + string + LS);
 			}
 
 		} else {
+			output.add("false");
 			fw.write("false " + LS);
 		}
 
 		fw.write(LS + "* " + "usedHashMap: ");
 		if (!maps.isEmpty()) {
+			output.add("true");
 			fw.write("true " + LS);
 			for (String string : maps) {
 				fw.write("- " + string + LS);
 			}
 
 		} else {
+			output.add("false");
 			fw.write("false " + LS);
 		}
 
 		fw.write(LS + "* " + "usedArrayList: ");
 		if (!arrays.isEmpty()) {
+			output.add("true");
 			fw.write("true " + LS);
 			for (String string : arrays) {
 				fw.write("- " + string + LS);
 			}
 
 		} else {
+			output.add("false");
 			fw.write("false " + LS);
 		}
 	}
