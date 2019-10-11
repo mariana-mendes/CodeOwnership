@@ -1,6 +1,8 @@
 package javaparsermodule;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -113,20 +115,38 @@ public class Extractor {
 	public void persistLabs() throws ParseException, IOException {
 		int count = 1;
 		File file;
-		while (count <= 10) {
-			this.componentClass = new ComponentClass<Object>();
-			file = new File("/home/mariana/Documents/tcc/labs-otimizado/" + count);
-			this.componentClass.register(file);
-			this.repo.addNewLab(count, this.componentClass);
-			count++;
+		String filename = "/home/mariana/Documents/tcc/CodeOwnership/names.txt";
+
+		try {
+			BufferedReader reader = new BufferedReader(new FileReader(filename));
+			String line;
+			while ((line = reader.readLine()) != null) {
+				if (!line.trim().isEmpty()) {
+					System.out.println(line);
+					this.componentClass = new ComponentClass<Object>();
+					file = new File("/home/mariana/Documents/tcc/source/" + line);
+					this.componentClass.register(file);
+					this.repo.addNewLab(line, this.componentClass);
+
+				}
+			}
+			reader.close();
+		} catch (Exception e) {
+			System.err.format("Exception occurred trying to read '%s'.", filename);
+			e.printStackTrace();
+		}
+		
+		
+		while (count <= 30) {
+
 		}
 	}
 
 	public void checkRequeridStatements() throws ParseException, IOException, IllegalAccessException,
 			IllegalArgumentException, InvocationTargetException {
 
-		Set<Integer> labs = this.repo.getCurrentLabs().keySet();
-		for (Integer lab : labs) {
+		Set<String> labs = this.repo.getCurrentLabs().keySet();
+		for (String lab : labs) {
 			Set<ClassOrInterfaceDeclaration> classes = this.repo.getCurrentLabs().get(lab).getClasses();
 			System.out.println("lab " + lab);
 			FileWriter fw = new FileWriter("../results/required" + lab + ".txt");

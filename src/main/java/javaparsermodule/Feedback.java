@@ -43,8 +43,6 @@ public class Feedback {
 					char asterisco = '*';
 					if (line.charAt(0) == asterisco) {
 						String[] parts = line.split(":");
-						System.out.println("part 1: " + parts[0]);
-						System.out.println("part 2: " + parts[1]);
 					}
 
 					records.add(line);
